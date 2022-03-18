@@ -1,6 +1,6 @@
-data/*.csv
-data/*.rar
-data/*.txt
+data/**/*.csv
+data/**/*.rar
+data/**/*.txt
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

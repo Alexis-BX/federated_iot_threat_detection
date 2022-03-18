@@ -1,1 +1,1 @@
-# federated_iot_threat_detection
+# federated learning on IoT devices for threat detection
