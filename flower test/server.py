@@ -1,48 +1,45 @@
 import flwr as fl
-import utils
+import joblib
 from sklearn.metrics import log_loss
-from sklearn.linear_model import LogisticRegression
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.tree import DecisionTreeClassifier
 
-from data_handle import request_data_server, get_1_all
+from models import generate_model, PORT
+from data_handle import request_data_server
 
+class Server:
+    def __init__(self, rounds=5, port=5000):
+        self.model = generate_model()
+    
+        _, (self.X_test, self.y_test), (X_init, y_init) = request_data_server()
+        
+        # give the model the correct shape
+        self.model.fit(X_init, y_init)
 
-def fit_round(rnd):
-    """Send round number to client."""
-    return {"rnd": rnd}
+        strategy = fl.server.strategy.FedAvg(
+            min_available_clients=2,
+            eval_fn = self.evaluate,
+            on_fit_config_fn=self.fit_round,
+        )
+        
+        self.metrics = fl.server.start_server(f"0.0.0.0:{port}", strategy=strategy, config={"num_rounds": rounds})
 
-
-def get_eval_fn(model):
-    """Return an evaluation function for server-side evaluation."""
-
-    # Load test data
-    _, X_test, _, y_test = request_data_server()
+    def fit_round(self, rnd):
+        """Send round number to client."""
+        return {"rnd": rnd}
 
     # evaluate function called after every round
-    def evaluate(parameters):
-        global model
+    def evaluate(self, parameters):
         # Update model with the latest parameters
-        model = utils.set_model_params(model, parameters)
-        loss = log_loss(y_test, model.predict_proba(X_test))
-        accuracy = model.score(X_test, y_test)
+        self.model.set_model_params(parameters)
+        loss = log_loss(self.y_test, self.model.predict_proba(self.X_test))
+        accuracy = self.model.score(self.X_test, self.y_test)
         return loss, {"accuracy": accuracy}
 
-    return evaluate
 
-
-# Start Flower server for five rounds of federated learning
 if __name__ == "__main__":
-    model = utils.generate_model()
-    
-    X_init, y_init = get_1_all()
-    model.fit(X_init, y_init)
+    # Start Flower server for five rounds of federated learning
+    server = Server(rounds=5, port=PORT)
+    joblib.dump(server.model, 'tree.joblib')
+    # model = load('tree.joblib')
 
-    strategy = fl.server.strategy.FedAvg(
-        min_available_clients=2,
-        eval_fn = get_eval_fn(model),
-        on_fit_config_fn=fit_round,
-    )
-    loss = fl.server.start_server("0.0.0.0:5000", strategy=strategy, config={"num_rounds": 5})
-    
-    print("EEEEEEEEEEEEEEND", loss)
+    print()
+    print(server.metrics)

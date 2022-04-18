@@ -1,15 +1,9 @@
 import pandas as pd
 import numpy as np
 import os
-import time
-import matplotlib.pyplot as plt
-from collections import Counter
-from subprocess import check_output
 
-from sklearn import preprocessing, metrics
-from sklearn.model_selection import train_test_split, cross_val_score
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.feature_selection import SelectKBest, chi2, RFECV
+from sklearn import preprocessing
+from sklearn.model_selection import train_test_split
 
 def get_data(data_type, device, name, extension, sep):
     """
@@ -83,24 +77,24 @@ def get_data_and_preprocess(data_type, device):
     return data_network, data_energy
 
 def requeset_data():
+    """ Create a complete table with all of the packet data """
     normal_network, normal_energy = get_data_and_preprocess('normal', 'archer')
     mirai_network, mirai_energy = get_data_and_preprocess('mirai', 'archer')
+    
     # Get both network datasets in the same time-frame
-
     max_time = min(normal_network['Time'].max(), normal_network['Time'].max())
 
     normal_network.drop(inplace=True, index=np.where(normal_network['Time']>max_time)[0])
-    normal_network.reset_index(inplace=True, drop=True)
-
-    mirai_network.drop(inplace=True, index=list(np.where(mirai_network['Time']>max_time)[0]))
-    mirai_network.reset_index(inplace=True, drop=True)
-
     normal_energy.drop(inplace=True, index=np.where(normal_energy['time']>max_time)[0])
-    normal_energy.reset_index(inplace=True, drop=True)
-
+    mirai_network.drop(inplace=True, index=list(np.where(mirai_network['Time']>max_time)[0]))
     mirai_energy.drop(inplace=True, index=list(np.where(mirai_energy['time']>max_time)[0]))
+
+    normal_network.reset_index(inplace=True, drop=True)
+    normal_energy.reset_index(inplace=True, drop=True)
+    mirai_network.reset_index(inplace=True, drop=True)
     mirai_energy.reset_index(inplace=True, drop=True)
 
+    # merge both dataframes together
     Final_merge = normal_network.append(mirai_network)
     Final_merge = Final_merge[Final_merge.Protocol != 0]
 
@@ -117,58 +111,52 @@ def requeset_data():
 
     return Final_merge
 
-def request_data_all():
-    Final_merge = requeset_data()
-
-    # Target variable and train set
-    y = Final_merge[['target']]
-    X = Final_merge.drop(['target', ], axis = 1)
-
-    # Split test and train data 
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = 0.6, random_state = 42)
-    return X_train, X_test, y_train, y_test    
-
-def request_data_server():
-    Final_merge = requeset_data()
-
-
-    y = Final_merge[['target']]
-    X = Final_merge.drop(['target', ], axis = 1)
-    
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = 0.6, random_state = 42)
-    
-    # one of each 
-    #idx = [max(list(np.where(np.logical_and(Final_merge['target']==i, Final_merge['Protocol']==j))[0])+[0]) for i in range(2) for j in range(8)]
-    #X_train, y_train = X.iloc[idx], y.iloc[idx]
-    
-    return X_train, X_test, y_train, y_test    
-
-def request_data_client(num):
-    Final_merge = requeset_data()
-
-    # split = Final_merge.shape[0]//2
-    # if num%2:
-    #     Final_merge = Final_merge.iloc[:split]
-    # else:
-    #     Final_merge = Final_merge.iloc[split:]
-
-    # Target variable and train set
-    y = Final_merge[['target']]
-    X = Final_merge.drop(['target', ], axis = 1)
-
-    # Split test and train data 
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = 0.6, random_state = 42)
-    return X_train, X_test, y_train, y_test    
-
-def get_1_all():
-    Final_merge = requeset_data()
-
+def get_1_all(Final_merge=None):
+    """ Extract 1 packet of each type for the normal and attack """
+    if Final_merge is None:
+        Final_merge = requeset_data()
 
     y = Final_merge[['target']]
     X = Final_merge.drop(['target', ], axis = 1)
     
     # one of each 
     idx = [max(list(np.where(np.logical_and(Final_merge['target']==i, Final_merge['Protocol']==j))[0])+[0]) for i in range(2) for j in range(8)]
+
     X_init, y_init = X.iloc[idx], y.iloc[idx]
-    
     return X_init, y_init
+
+def request_data_server():
+    """ Create the datasets to be used by the server """
+    Final_merge = requeset_data()
+    X_init, y_init = get_1_all(Final_merge)
+
+    y = Final_merge[['target']]
+    X = Final_merge.drop(['target', ], axis = 1)
+    
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = 0.6, random_state = 42)
+    
+    return (X_train, y_train), (X_test, y_test), (X_init, y_init)
+
+def request_data_client(num):
+    """ Create the datasets to be used by the client """
+    Final_merge = requeset_data()
+    X_init, y_init = get_1_all(Final_merge)
+
+    split = Final_merge.shape[0]//2
+    if num%2:
+        Final_merge = Final_merge.iloc[:split]
+    else:
+        Final_merge = Final_merge.iloc[split:]
+
+    # Target variable and train set
+    y = Final_merge[['target']]
+    X = Final_merge.drop(['target', ], axis = 1)
+
+    # Split test and train data 
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = 0.6, random_state = 42)
+
+    # need to have one of each for the trees to have the correct shape
+    X_train = X_train.append(X_init).reset_index(drop=True)
+    y_train = y_train.append(y_init).reset_index(drop=True)
+    
+    return (X_train, y_train), (X_test, y_test), (X_init, y_init)    

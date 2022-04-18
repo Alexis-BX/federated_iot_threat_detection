@@ -15,11 +15,11 @@ pip install flwr
 Make sure to have the data downloaded as-is from the drive in the main folder named `QRS_dataset`.
 
 ## Working on
-- code cleaning
-- imports cleaning
-- code commenting
-- code optimizing (for different methods/dataset)
-- implementing a random forest version
-- automating running
-- saving model once done with training
-
+ - [x] code cleaning
+ - [x] imports cleaning
+ - [x] code commenting
+ - [x] code optimizing (for different methods/dataset)
+ - [ ] implementing a random forest version
+ - [x] automating running
+ - [x] saving model once done with training
+ - [ ] make it work with PI
