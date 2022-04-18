@@ -5,6 +5,10 @@ import os
 from sklearn import preprocessing
 from sklearn.model_selection import train_test_split
 
+dic_protocoles = {protocol:i for i,protocol in enumerate(['DNS', 'ARP', 'DHCP', 'ICMP', 'TCP', 'TLSv1.2', 'NTP', 'ICMPv6'])}
+dic_attacks = {attack:i for i, attack in enumerate(['normal', 'mirai'])}
+
+
 def get_data(data_type, device, name, extension, sep):
     """
     data_type: type of data to return: Normal, Mirai, RouterSploit, UFONet
@@ -55,7 +59,7 @@ def get_data_energy(data_type, device):
     data.reset_index(inplace=True, drop=True)
 
     return data
-
+    
 def get_data_and_preprocess(data_type, device):
     """
     data_type: type of data to return: Normal, Mirai, RouterSploit, UFONet
@@ -75,6 +79,26 @@ def get_data_and_preprocess(data_type, device):
     data_network.reset_index(inplace=True, drop=True)
 
     return data_network, data_energy
+
+def translate_to_ints(data):
+    data['Protocol'] = data['Protocol'].map(dic_protocoles)
+
+    le = preprocessing.LabelEncoder()
+    data['Source'] = le.fit_transform(data.Source.values)
+    data['Destination'] = le.fit_transform(data.Destination.values)
+
+    data['target'] = data['target'].map(dic_attacks)
+
+    return data
+
+def translate_to_readable(data):
+    dic_protocoles_inv = {v:k for k,v in dic_protocoles.items()}
+    data['Protocol'] = data['Protocol'].map(dic_protocoles_inv)
+
+    dic_attacks_inv = {v:k for k,v in dic_attacks.items()}
+    data['target'] = data['target'].map(dic_attacks_inv)
+
+    return data
 
 def requeset_data():
     """ Create a complete table with all of the packet data """
@@ -98,16 +122,8 @@ def requeset_data():
     Final_merge = normal_network.append(mirai_network)
     Final_merge = Final_merge[Final_merge.Protocol != 0]
 
-    # protocol_type feature mapping
-    dic_protocoles = {'DNS':0, 'ARP':1, 'DHCP':2, 'ICMP':3, 'TCP':4, 'TLSv1.2':5, 'NTP':6, 'ICMPv6':7}
-    Final_merge['Protocol'] = Final_merge['Protocol'].map(dic_protocoles)
-
-    le = preprocessing.LabelEncoder()
-    Final_merge['Source'] = le.fit_transform(Final_merge.Source.values)
-    Final_merge['Destination'] = le.fit_transform(Final_merge.Destination.values)
-
-    dic_attacks = {'normal':0, 'mirai':1}
-    Final_merge['target'] = Final_merge['target'].map(dic_attacks)
+    # feature mapping
+    Final_merge = translate_to_ints(Final_merge)
 
     return Final_merge
 
