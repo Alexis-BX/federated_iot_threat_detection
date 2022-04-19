@@ -22,6 +22,7 @@ class Server:
         
         self.metrics1 = fl.server.start_server(f"0.0.0.0:{port}", strategy=strategy, config={"num_rounds": rounds})
         self.metrics2 = fl.server.start_server(f"0.0.0.0:{port+1}", strategy=strategy, config={"num_rounds": rounds})
+        self.metrics2 = fl.server.start_server(f"0.0.0.0:{port+2}", strategy=strategy, config={"num_rounds": rounds})
 
         self.metrics = self.model.score(self.X_test, self.y_test)
 

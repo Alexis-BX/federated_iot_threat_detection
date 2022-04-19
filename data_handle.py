@@ -45,6 +45,7 @@ def get_data(data_type, device, name, extension, sep):
 def get_data_network(data_type, device):
     data = get_data(data_type, device, 'network', '.csv', ';')
     data.drop(['Info', 'No.'], axis=1, inplace=True)
+    data.drop(inplace=True, index=np.where(data['Protocol']=='ICMP')[0])
     
     return data
 

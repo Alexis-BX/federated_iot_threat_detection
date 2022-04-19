@@ -6,7 +6,8 @@ QRS_dataset/
 
 *.csv
 *.zip
-flower\ test/*.joblib
+*.joblib
+*.png
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
