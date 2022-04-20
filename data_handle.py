@@ -172,11 +172,6 @@ def request_data_client(num):
     m, M = max(0, split*num), min(Final_merge.shape[0], split*(num+1))
     Final_merge = Final_merge.iloc[m:M]
 
-    # if num%2:
-    #     Final_merge = Final_merge.iloc[:split]
-    # else:
-    #     Final_merge = Final_merge.iloc[split:]
-
     # Target variable and train set
     y = Final_merge[['target']]
     X = Final_merge.drop(['target', ], axis = 1)

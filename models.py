@@ -7,13 +7,8 @@ from sklearn.metrics import accuracy_score
 
 PORT = 5000
 MIN_CLIENTS = 3
-ROUNDS = 1
+ROUNDS = 5
 FOREST = True
-
-def generate_model():
-    """ Used to repidely change the model to use """
-    #return TreeClassifier()
-    return ForestClassifier(MIN_CLIENTS)
 
 class TreeClassifier(DecisionTreeClassifier):
     def __init__(self, id=None):
@@ -113,7 +108,7 @@ class ForestClassifier:
         y_pred = self.predict(X)
         return accuracy_score(y, y_pred)
 
-    def predic_proba(self, X):
+    def predict_proba(self, X):
         proba_per_tree = [tree.predict_proba(X) for tree in self.trees]
         return np.sum(proba_per_tree, axis=0)/len(self.trees)
         
