@@ -152,7 +152,11 @@ def get_1_all(Final_merge=None):
 
 def request_data_server():
     """ Create the datasets to be used by the server """
-    Final_merge = requeset_data()
+    try:
+        Final_merge = requeset_data()
+    except FileNotFoundError:
+        Final_merge = pd.read_csv(f'dataset_{MIN_CLIENTS}.csv', index_col=0)
+
     X_init, y_init = get_1_all(Final_merge)
 
     y = Final_merge[['target']]
@@ -164,7 +168,11 @@ def request_data_server():
 
 def request_data_client(num):
     """ Create the datasets to be used by the client """
-    Final_merge = requeset_data()
+    try:
+        Final_merge = requeset_data()
+    except FileNotFoundError:
+        Final_merge = pd.read_csv(f'dataset_{num}.csv', index_col=0)
+    
     X_init, y_init = get_1_all(Final_merge)
 
     split = Final_merge.shape[0]//MIN_CLIENTS
@@ -183,4 +191,4 @@ def request_data_client(num):
     X_train = X_train.append(X_init).reset_index(drop=True)
     y_train = y_train.append(y_init).reset_index(drop=True)
     
-    return (X_train, y_train), (X_test, y_test), (X_init, y_init)    
+    return (X_train, y_train), (X_test, y_test), (X_init, y_init)

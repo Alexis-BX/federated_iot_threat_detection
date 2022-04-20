@@ -9,6 +9,9 @@ QRS_dataset/
 *.joblib
 *.png
 
+!dataset_*.csv
+!code_diagram.PNG
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
