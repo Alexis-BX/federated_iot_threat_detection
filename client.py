@@ -3,12 +3,12 @@ import flwr as fl
 import sys
 from sklearn.metrics import log_loss
 
-from models import generate_model, PORT, TreeForestClassifier
+from models import FOREST, TreeClassifier, PORT
 from data_handle import request_data_client
 
 class MnistClient(fl.client.NumPyClient):
     def __init__(self, number):
-        self.model = TreeForestClassifier(number)#generate_model()
+        self.model = TreeClassifier(number)
         
         (self.X_train, self.y_train), (self.X_test, self.y_test), (X_init, y_init) = request_data_client(number)
 
@@ -42,4 +42,7 @@ if __name__ == "__main__":
     number = int(sys.argv[1]) if len(sys.argv) >= 2 else 0
     
     # Start Flower client
-    fl.client.start_numpy_client(f"0.0.0.0:{PORT+number}", client=MnistClient(number))
+    PORT += number if FOREST else 0
+
+    fl.client.start_numpy_client(f"0.0.0.0:{PORT}", client=MnistClient(number))
+    

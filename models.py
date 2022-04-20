@@ -1,14 +1,14 @@
 import numpy as np
 from collections import Counter
 from sklearn.tree import DecisionTreeClassifier
-from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score
 
 # from sklearn.linear_model import LogisticRegression
 
 PORT = 5000
-MIN_CLIENTS = 2
+MIN_CLIENTS = 3
 ROUNDS = 1
+FOREST = True
 
 def generate_model():
     """ Used to repidely change the model to use """
@@ -16,7 +16,7 @@ def generate_model():
     return ForestClassifier(MIN_CLIENTS)
 
 class TreeClassifier(DecisionTreeClassifier):
-    def __init__(self):
+    def __init__(self, id=None):
         super().__init__(
             ccp_alpha=0.0, 
             class_weight={i: 1 for i in range(2)}, 
@@ -32,10 +32,13 @@ class TreeClassifier(DecisionTreeClassifier):
             splitter='best'
         )
         self.first = True
-        self.name = 'decisionTree'
+        self.name = 'decisionTree' + (f'_{id}' if id is not None else '')
         self.id = id
 
     def set_model_params(self, params):
+        if len(params)==4:
+            params = params[1:]
+
         if self.first:
             self.first = False
             self.params_init(params)
@@ -56,34 +59,8 @@ class TreeClassifier(DecisionTreeClassifier):
 
     def get_params(self):
         """Returns the paramters of a sklearn LogisticRegression model."""
-        return [self.tree_.feature, self.tree_.threshold, self.tree_.value]
-
-class TreeForestClassifier(DecisionTreeClassifier):
-    def __init__(self, id):
-        super().__init__(
-            ccp_alpha=0.0, 
-            class_weight={i: 1 for i in range(2)}, 
-            criterion='gini', 
-            max_depth=3, 
-            max_features=None, 
-            max_leaf_nodes=None, 
-            min_impurity_decrease=0.0, 
-            min_samples_leaf=1,
-            min_samples_split=2, 
-            min_weight_fraction_leaf=0.0, 
-            random_state=None,
-            splitter='best'
-        )
-        self.first = True
-        self.name = 'decisionTreeForest'
-        self.id = id
-
-    def set_model_params(self, params):
-        return
-
-    def get_params(self):
-        """Returns the paramters of a sklearn LogisticRegression model."""
-        print(self.id)
+        if self.id is None:
+            return [self.tree_.feature, self.tree_.threshold, self.tree_.value]
         return [np.array([self.id]), self.tree_.feature, self.tree_.threshold, self.tree_.value]
 
 class ForestClassifier:
@@ -116,7 +93,6 @@ class ForestClassifier:
 
     def params_init(self, params):
         t, params = params[0][0], params[1:]
-        
         for idx, (i, j, k) in enumerate(zip(params[0], params[1], params[2])):
             self.trees[t].tree_.feature[idx] = i
             self.trees[t].tree_.threshold[idx] = j
@@ -124,7 +100,6 @@ class ForestClassifier:
 
     def params_update(self, params):
         t, params = params[0][0], params[1:]
-        print(t)
         for idx, (i, j, k) in enumerate(zip(params[0], params[1], params[2])):
             self.trees[t].tree_.feature[idx] = (self.trees[t].tree_.feature[idx] + i) / 2
             self.trees[t].tree_.threshold[idx] = (self.trees[t].tree_.threshold[idx] + j) / 2
@@ -138,44 +113,8 @@ class ForestClassifier:
         y_pred = self.predict(X)
         return accuracy_score(y, y_pred)
 
-# class ForestClassifier(RandomForestClassifier):
-#     def __init__(self):
-#         super().__init__(
-#             n_estimators=5, 
-#             criterion='gini', 
-#             max_depth=3,
-#             warm_start=True
-#         )
-#         self.first = True
-#         self.name = 'randomForest'
+    def predic_proba(self, X):
+        proba_per_tree = [tree.predict_proba(X) for tree in self.trees]
+        return np.sum(proba_per_tree, axis=0)/len(self.trees)
+        
 
-#     def set_model_params(self, params):
-#         if self.first:
-#             self.first = False
-#             self.params_init(params)
-#         else:
-#             self.params_update(params)
-
-#     def params_init(self, params):
-#         for t in range(self.n_estimators):
-#             print(self.estimators_[t].get_depth())
-#             for idx, (i, j, k) in enumerate(zip(params[3*t+0],params[3*t+1],params[3*t+2])):
-#                 self.estimators_[t].tree_.feature[idx] = i
-#                 self.estimators_[t].tree_.threshold[idx] = j
-#                 self.estimators_[t].tree_.value[idx] = k
-
-#     def params_update(self, params):
-#         for t in range(self.n_estimators):
-#             print(self.estimators_[t].get_depth())
-#             for idx, (i, j, k) in enumerate(zip(params[3*t+0],params[3*t+1],params[3*t+2])):
-#                 self.estimators_[t].tree_.feature[idx] = (self.estimators_[t].tree_.feature[idx] + i) / 2
-#                 self.estimators_[t].tree_.threshold[idx] = (self.estimators_[t].tree_.threshold[idx] + j) / 2
-#                 self.estimators_[t].tree_.value[idx] = (self.estimators_[t].tree_.value[idx] + k) / 2
-
-#     def get_params(self):
-#         """Returns the paramters of a sklearn LogisticRegression model."""
-#         return sum([self.get_params_tree(self.estimators_[i]) for i in range(self.n_estimators)], [])
-
-#     def get_params_tree(self, tree):
-#         """Returns the paramters of a sklearn LogisticRegression model."""
-#         return [tree.tree_.feature, tree.tree_.threshold, tree.tree_.value]

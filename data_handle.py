@@ -5,6 +5,8 @@ import os
 from sklearn import preprocessing
 from sklearn.model_selection import train_test_split
 
+from models import MIN_CLIENTS
+
 dic_protocoles = {protocol:i for i,protocol in enumerate(['DNS', 'ARP', 'DHCP', 'ICMP', 'TCP', 'TLSv1.2', 'NTP', 'ICMPv6'])}
 dic_attacks = {attack:i for i, attack in enumerate(['normal', 'mirai'])}
 
@@ -46,6 +48,7 @@ def get_data_network(data_type, device):
     data = get_data(data_type, device, 'network', '.csv', ';')
     data.drop(['Info', 'No.'], axis=1, inplace=True)
     data.drop(inplace=True, index=np.where(data['Protocol']=='ICMP')[0])
+    data.reset_index(inplace=True, drop=True)
     
     return data
 
@@ -164,11 +167,15 @@ def request_data_client(num):
     Final_merge = requeset_data()
     X_init, y_init = get_1_all(Final_merge)
 
-    split = Final_merge.shape[0]//2
-    if num%2:
-        Final_merge = Final_merge.iloc[:split]
-    else:
-        Final_merge = Final_merge.iloc[split:]
+    split = Final_merge.shape[0]//MIN_CLIENTS
+    num %= MIN_CLIENTS
+    m, M = max(0, split*num), min(Final_merge.shape[0], split*(num+1))
+    Final_merge = Final_merge.iloc[m:M]
+
+    # if num%2:
+    #     Final_merge = Final_merge.iloc[:split]
+    # else:
+    #     Final_merge = Final_merge.iloc[split:]
 
     # Target variable and train set
     y = Final_merge[['target']]
