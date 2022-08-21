@@ -4,7 +4,7 @@ import threading
 from time import sleep
 from sklearn.metrics import log_loss
 
-from models import TreeClassifier, ForestClassifier, PORT, MIN_CLIENTS, ROUNDS, FOREST
+from models import TreeClassifier, ForestClassifier, PORT, MIN_CLIENTS, ROUNDS, FOREST, SERVER_IP
 from data_handle import request_data_server
 
 class Server:
@@ -53,7 +53,7 @@ class Server:
 
 
     def launch_server(self, i):
-        self.metrics[i] = fl.server.start_server(f"0.0.0.0:{self.port+i}", config={"num_rounds": self.rounds}, server=self.servers[i], strategy=self.strategy)
+        self.metrics[i] = fl.server.start_server(f"{SERVER_IP}:{self.port+i}", config={"num_rounds": self.rounds}, server=self.servers[i], strategy=self.strategy)
 
 
     def get_metrics(self):

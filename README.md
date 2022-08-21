@@ -26,7 +26,7 @@ python3 client.py 2
 
 ## Prerequisites
 ```
-pip install flwr numpy pandas sklearn
+pip install -r requirements.txt
 ```
 For development: download data as-is from the drive in a folder named `QRS_dataset`
 

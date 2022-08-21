@@ -3,7 +3,7 @@ import flwr as fl
 import sys
 from sklearn.metrics import log_loss
 
-from models import FOREST, TreeClassifier, PORT
+from models import FOREST, TreeClassifier, PORT, SERVER_IP
 from data_handle import request_data_client
 
 class MnistClient(fl.client.NumPyClient):
@@ -44,5 +44,5 @@ if __name__ == "__main__":
     # Start Flower client
     PORT += number if FOREST else 0
 
-    fl.client.start_numpy_client(f"0.0.0.0:{PORT}", client=MnistClient(number))
+    fl.client.start_numpy_client(f"{SERVER_IP}:{PORT}", client=MnistClient(number))
     

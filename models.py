@@ -6,6 +6,8 @@ from sklearn.metrics import accuracy_score
 # from sklearn.linear_model import LogisticRegression
 
 PORT = 5000
+#SERVER_IP = '0.0.0.0'
+SERVER_IP = '127.0.0.1'
 MIN_CLIENTS = 3
 ROUNDS = 5
 FOREST = True
